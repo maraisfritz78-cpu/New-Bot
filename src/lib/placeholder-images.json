@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "user-avatar",
+      "description": "A placeholder for the user's avatar.",
+      "imageUrl": "https://images.unsplash.com/photo-1521566652839-697aa473761a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwZXJzb258ZW58MHx8fHwxNzYwODM2NzI1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person"
+    }
+  ]
+}
