@@ -1,5 +1,38 @@
 [
   {
+    "id": "trade-1763343756667-brpzy7p",
+    "pair": "ETC/USDT",
+    "entryPrice": 14.194950502188364,
+    "exitPrice": 14.173658076435082,
+    "size": 0.1,
+    "action": "buy",
+    "timestamp": 1763343756667,
+    "pnl": -0.002998874999999981,
+    "exitReason": "Stop Loss"
+  },
+  {
+    "id": "trade-1763343756667-99jp388",
+    "pair": "ETC/USDT",
+    "entryPrice": 14.194950502188364,
+    "exitPrice": 14.173658076435082,
+    "size": 0.1,
+    "action": "buy",
+    "timestamp": 1763343756667,
+    "pnl": -0.002998874999999981,
+    "exitReason": "Stop Loss"
+  },
+  {
+    "id": "trade-1763334779107-rlj0vkl",
+    "pair": "XRP/USDT",
+    "entryPrice": 2.355539224537674,
+    "exitPrice": 2.359072533374481,
+    "size": 1,
+    "action": "sell",
+    "timestamp": 1763334779107,
+    "pnl": -0.02998875000000124,
+    "exitReason": "Stop Loss"
+  },
+  {
     "id": "trade-1763272082816-8jjexx4",
     "pair": "DOGE/USDT",
     "entryPrice": 0.14348226312437146,

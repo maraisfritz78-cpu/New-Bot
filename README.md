@@ -68,3 +68,4 @@ Once both servers are running, you can open your browser to `http://localhost:90
 1.  Navigate to the **Settings** tab in the dashboard.
 2.  Toggle the mode from "Paper" to "Live".
 3.  Enter your live Binance API Key and API Secret into the form. **Note**: These keys are stored in the application's state and are not committed to the repository, but handle them with care.
+"# Bybit_Trader" 
