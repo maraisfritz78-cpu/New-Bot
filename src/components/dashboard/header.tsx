@@ -53,7 +53,7 @@ export function DashboardHeader({
 
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 sm:px-6 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-red-500 px-4 sm:px-6 backdrop-blur-sm">
       <div className="flex items-center gap-3 md:gap-4">
         <StatItem label="Balance" value={`$${balance.toFixed(2)}`} tooltip="Total Portfolio Balance" icon={Briefcase} valueClass="text-primary" />
         <Separator orientation="vertical" className="h-6" />
