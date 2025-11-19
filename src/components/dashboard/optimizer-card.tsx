@@ -6,21 +6,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, Wand2, ArrowDownToLine } from "lucide-react";
 import { type SuggestStrategyAdjustmentsOutput } from "@/ai/flows/suggest-strategy-adjustments";
-import type { StrategyParams } from "@/lib/types";
+import type { GlobalStrategy, StrategyParams } from "@/lib/types";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import { SuggestionComparison } from './suggestion-comparison';
+import { defaultSymbolStrategy } from '@/lib/user-config';
+
+// Helper function to resolve the strategy for a given symbol
+const getStrategyForSymbol = (globalStrategy: GlobalStrategy, symbol: string): StrategyParams => {
+  const symbolOverride = globalStrategy.perSymbol[symbol] || {};
+  return { ...defaultSymbolStrategy, ...symbolOverride };
+};
 
 interface OptimizerCardProps {
-  onOptimize: (usePhase2?: boolean, usePhase3?: boolean, usePhase4?: boolean) => void;
+  onOptimize: () => void; // Simplified onOptimize
   suggestion: SuggestStrategyAdjustmentsOutput | null;
   isLoading: boolean;
   onApplySuggestions: (suggestions: Record<string, Partial<StrategyParams>>) => void;
   currentGeminiKey?: string;
   onSaveGeminiKey?: (key: string) => void;
-  weights?: { pnl: number; sharpe: number; sortino: number; drawdown: number };
-  onWeightsChange?: (weights: any) => void;
+  strategy: GlobalStrategy | null; // Add strategy to props
 }
 
-function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySuggestions, currentGeminiKey = '', onSaveGeminiKey, weights, onWeightsChange }: OptimizerCardProps) {
+function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySuggestions, currentGeminiKey = '', onSaveGeminiKey, strategy }: OptimizerCardProps) {
   
   const handleApplyClick = () => {
     if (suggestion?.perSymbolSuggestions) {
@@ -39,9 +46,9 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
       <CardHeader>
         <div className="flex items-center gap-2">
           <Wand2 className="h-6 w-6 text-accent" />
-          <CardTitle className="font-headline">Optimizer</CardTitle>
+          <CardTitle className="font-headline">AI Optimizer</CardTitle>
         </div>
-        <CardDescription>Use AI to analyze past performance and suggest strategy improvements per symbol.</CardDescription>
+        <CardDescription>Use AI to analyze market conditions and past performance to suggest strategy improvements.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
         {/* Gemini API key inline editor */}
@@ -72,15 +79,15 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
         {isLoading ? (
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-accent" />
-            <p className="text-muted-foreground">Analyzing performance and market data...</p>
+            <p className="text-muted-foreground">AI is analyzing performance and market data...</p>
           </div>
         ) : suggestion ? (
           <div className="w-full text-left space-y-6">
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-muted/30">
                     <CardHeader className="pb-2">
-                        <CardDescription>Projected 7 Day PnL</CardDescription>
+                        <CardDescription>Projected 7d Improvement</CardDescription>
                         <CardTitle className={`font-mono text-lg ${suggestion.projected7DayPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             ${suggestion.projected7DayPnl.toFixed(2)}
                         </CardTitle>
@@ -88,17 +95,9 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
                 </Card>
                  <Card className="bg-muted/30">
                     <CardHeader className="pb-2">
-                        <CardDescription>Projected 30 Day PnL</CardDescription>
+                        <CardDescription>Projected 30d Improvement</CardDescription>
                         <CardTitle className={`font-mono text-lg ${suggestion.projected30DayPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             ${suggestion.projected30DayPnl.toFixed(2)}
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
-                 <Card className="bg-muted/30">
-                    <CardHeader className="pb-2">
-                        <CardDescription>Optimizer Mode</CardDescription>
-                        <CardTitle className="font-mono text-lg">
-                            {(suggestion as any).phase4 ? 'Phase 4 (Elite)' : suggestion.phase3 ? 'Phase 3 (Professional)' : suggestion.phase2 ? 'Phase 2 (Complete)' : 'Phase 1 (Quick)'}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -108,80 +107,34 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
               <h3 className="font-semibold font-headline text-lg mb-2">Overall Reasoning</h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">{suggestion.overallReasoning}</p>
             </div>
-
-            {/* Phase 3/4: Scoring Weights - Improved UI */}
-            {onWeightsChange && (
-              <div className="w-full space-y-3">
-                <h3 className="text-sm font-semibold mb-2">Scoring Profile (Phase 3/4)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <Card 
-                    className={`cursor-pointer transition-all ${
-                      weights?.pnl === 0.5 && weights?.sharpe === 0.2 && weights?.sortino === 0.1 && weights?.drawdown === 0.2
-                        ? 'border-accent border-2 bg-accent/10' 
-                        : 'hover:border-accent/50'
-                    }`}
-                    onClick={() => onWeightsChange({ pnl: 0.5, sharpe: 0.2, sortino: 0.1, drawdown: 0.2 })}
-                  >
-                    <CardHeader className="pb-2 pt-3">
-                      <CardTitle className="text-sm">⚖️ Balanced</CardTitle>
-                      <CardDescription className="text-xs">50% profit, 30% risk-adjusted, 20% drawdown</CardDescription>
-                    </CardHeader>
-                  </Card>
-                  
-                  <Card 
-                    className={`cursor-pointer transition-all ${
-                      weights?.pnl === 0.3 && weights?.sharpe === 0.1 && weights?.sortino === 0.1 && weights?.drawdown === 0.5
-                        ? 'border-accent border-2 bg-accent/10' 
-                        : 'hover:border-accent/50'
-                    }`}
-                    onClick={() => onWeightsChange({ pnl: 0.3, sharpe: 0.1, sortino: 0.1, drawdown: 0.5 })}
-                  >
-                    <CardHeader className="pb-2 pt-3">
-                      <CardTitle className="text-sm">🛡️ Conservative</CardTitle>
-                      <CardDescription className="text-xs">30% profit, 20% risk-adjusted, 50% drawdown</CardDescription>
-                    </CardHeader>
-                  </Card>
-                  
-                  <Card 
-                    className={`cursor-pointer transition-all ${
-                      weights?.pnl === 0.7 && weights?.sharpe === 0.15 && weights?.sortino === 0.05 && weights?.drawdown === 0.1
-                        ? 'border-accent border-2 bg-accent/10' 
-                        : 'hover:border-accent/50'
-                    }`}
-                    onClick={() => onWeightsChange({ pnl: 0.7, sharpe: 0.15, sortino: 0.05, drawdown: 0.1 })}
-                  >
-                    <CardHeader className="pb-2 pt-3">
-                      <CardTitle className="text-sm">🚀 Aggressive</CardTitle>
-                      <CardDescription className="text-xs">70% profit, 20% risk-adjusted, 10% drawdown</CardDescription>
-                    </CardHeader>
-                  </Card>
-                </div>
-              </div>
-            )}
-
+            
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold font-headline text-lg">Suggested Adjustments by Symbol</h3>
               </div>
-              {hasSuggestions ? (
+              {hasSuggestions && strategy ? (
                 <Accordion type="single" collapsible className="w-full">
-                  {suggestion.perSymbolSuggestions.map((item) => (
-                    <AccordionItem value={item.symbol} key={item.symbol}>
-                      <AccordionTrigger className="font-semibold">{item.symbol}</AccordionTrigger>
-                      <AccordionContent className="space-y-4 pt-2">
-                          <div>
-                            <h4 className="font-medium text-muted-foreground">Reasoning:</h4>
-                            <p className="text-sm text-muted-foreground/80 whitespace-pre-wrap">{item.reasoning}</p>
-                          </div>
-                           <div>
-                            <h4 className="font-medium text-muted-foreground">Suggestion:</h4>
-                             <p className="text-sm text-muted-foreground/80 whitespace-pre-wrap font-mono p-4 bg-muted/50 rounded-md">
-                              {item.humanReadableSuggestion}
-                            </p>
-                          </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
+                  {suggestion.perSymbolSuggestions.map((item) => {
+                    const currentParams = getStrategyForSymbol(strategy, item.symbol);
+                    return (
+                        <AccordionItem value={item.symbol} key={item.symbol}>
+                        <AccordionTrigger className="font-semibold">{item.symbol}</AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <div>
+                                <h4 className="font-medium text-muted-foreground">Reasoning:</h4>
+                                <p className="text-sm text-muted-foreground/80 whitespace-pre-wrap">{item.reasoning}</p>
+                            </div>
+                            <div>
+                                <h4 className="font-medium text-muted-foreground">Suggested Changes:</h4>
+                                <SuggestionComparison 
+                                    currentParams={currentParams} 
+                                    suggestedParams={item.suggestedParams} 
+                                />
+                            </div>
+                        </AccordionContent>
+                        </AccordionItem>
+                    )
+                  })}
                 </Accordion>
               ) : (
                 <p className="text-sm text-muted-foreground">The AI found no specific adjustments to recommend at this time.</p>
@@ -192,13 +145,12 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
         ) : (
           <div className="flex flex-col items-center gap-2">
             <Sparkles className="h-12 w-12 text-muted-foreground/50" />
-            <p className="text-muted-foreground">Click below to get started</p>
+            <p className="text-muted-foreground">Click below to get AI-powered suggestions</p>
           </div>
         )}
       </CardContent>
       <div className="p-6 pt-0 flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={() => onOptimize(false, false, false)} disabled={isLoading} size="sm" variant="outline">
+        <Button onClick={() => onOptimize()} disabled={isLoading} size="lg" variant="default">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -207,58 +159,18 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Phase 1
+                Run AI Optimizer
               </>
             )}
-          </Button>
-          <Button onClick={() => onOptimize(true, false, false)} disabled={isLoading} size="sm" variant="outline">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Optimizing...
-              </>
-            ) : (
-              <>
-                <Wand2 className="mr-2 h-4 w-4" />
-                Phase 2
-              </>
-            )}
-          </Button>
-          <Button onClick={() => onOptimize(false, true, false)} disabled={isLoading} size="sm" variant="default">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Optimizing...
-              </>
-            ) : (
-              <>
-                <Wand2 className="mr-2 h-4 w-4" />
-                Phase 3
-              </>
-            )}
-          </Button>
-          <Button onClick={() => onOptimize(false, false, true)} disabled={isLoading} size="sm" variant="default">
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Optimizing...
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Phase 4 ⚡
-              </>
-            )}
-          </Button>
-        </div>
+        </Button>
         {suggestion && hasSuggestions && (
           <Button variant="outline" onClick={handleApplyClick} className="w-full">
             <ArrowDownToLine className="mr-2 h-4 w-4" />
-            Apply Suggestions
+            Apply All Suggestions
           </Button>
         )}
         <p className="text-xs text-muted-foreground text-center mt-1">
-          Phase 1: Thresholds | Phase 2: TP/SL+Leverage | Phase 3: Slippage+Timing | Phase 4: Dynamic Sizing+Exits
+          The AI optimizer analyzes market conditions and past performance to recommend settings.
         </p>
       </div>
     </Card>
@@ -266,5 +178,3 @@ function OptimizerCardComponent({ onOptimize, suggestion, isLoading, onApplySugg
 }
 
 export const OptimizerCard = React.memo(OptimizerCardComponent);
-
-    
